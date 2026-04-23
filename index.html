@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreelanceQuest — El Juego del Solopreneur</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1c1c27;
+    --accent: #f5c842;
+    --accent2: #42f5c8;
+    --accent3: #f542a8;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --border: #2a2a3a;
+    --success: #42f58a;
+    --danger: #f55a42;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated bg grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(245,200,66,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,200,66,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* Header */
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .turn-badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .stat-card.clientes::after { background: var(--accent2); }
+  .stat-card.energia::after { background: var(--accent); }
+  .stat-card.reputacion::after { background: var(--accent3); }
+  .stat-card.dinero::after { background: var(--success); }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-card.clientes .stat-value { color: var(--accent2); }
+  .stat-card.energia .stat-value { color: var(--accent); }
+  .stat-card.reputacion .stat-value { color: var(--accent3); }
+  .stat-card.dinero .stat-value { color: var(--success); }
+
+  .stat-bar-wrap {
+    margin-top: 6px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* Scenario panel */
+  .scenario-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    position: relative;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .scenario-tag {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .scenario-tag::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .scenario-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .scenario-desc {
+    font-size: 13px;
+    color: #a0a0b8;
+    line-height: 1.7;
+  }
+
+  /* Choices */
+  .choices-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .choices-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .choice-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .choice-btn:hover {
+    border-color: var(--accent);
+    background: #222230;
+    transform: translateY(-2px);
+  }
+
+  .choice-btn:active { transform: translateY(0); }
+
+  .choice-btn::before {
+    content: attr(data-key);
+    position: absolute;
+    top: 10px; right: 12px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .choice-action {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .choice-effects {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .effect-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-weight: 500;
+  }
+
+  .effect-tag.pos { background: rgba(66,245,138,0.12); color: var(--success); }
+  .effect-tag.neg { background: rgba(245,90,66,0.12); color: var(--danger); }
+  .effect-tag.neu { background: rgba(245,200,66,0.12); color: var(--accent); }
+
+  /* Result feedback */
+  .result-panel {
+    background: var(--card);
+    border-left: 3px solid var(--accent2);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #b8b8d0;
+    line-height: 1.6;
+    animation: slideIn 0.3s ease;
+    display: none;
+  }
+
+  .result-panel.show { display: block; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .result-panel .result-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  /* Log */
+  .log-section {
+    margin-top: 28px;
+  }
+
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .log-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .log-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .log-entry {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 12px;
+    background: var(--surface);
+    border-left: 2px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .log-turn {
+    color: var(--accent);
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+
+  .progress-dot {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+
+  .progress-dot.done { background: var(--accent); }
+  .progress-dot.current { background: var(--accent2); animation: blink 1s infinite alternate; }
+
+  @keyframes blink { from { opacity: 1; } to { opacity: 0.4; } }
+
+  /* Win/Lose screen */
+  .endscreen {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .endscreen.show { display: block; }
+
+  .end-emoji {
+    font-size: 64px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .end-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+
+  .end-title.win { color: var(--success); }
+  .end-title.lose { color: var(--danger); }
+
+  .end-desc {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 440px;
+    margin: 0 auto 28px;
+    line-height: 1.7;
+  }
+
+  .end-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .end-stat { text-align: center; }
+  .end-stat-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent); }
+  .end-stat-lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .restart-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    padding: 14px 36px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+
+  .restart-btn:hover { background: #ffd700; transform: scale(1.04); }
+
+  /* Tip bar */
+  .tip-bar {
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.2);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .tip-bar span { color: #b8b870; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  @media (max-width: 580px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .choices-grid { grid-template-columns: 1fr; }
+    .stat-value { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="game-header">
+    <div class="logo">Freelance<span>Quest</span></div>
+    <div class="turn-badge" id="turn-badge">Turno 1 / 8</div>
+  </div>
+
+  <!-- Main game -->
+  <div id="game-main">
+    <div class="progress-track" id="progress-track"></div>
+
+    <div class="stats-bar">
+      <div class="stat-card clientes">
+        <div class="stat-label">Clientes</div>
+        <div class="stat-value" id="stat-clientes">0</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-clientes" style="width:0%;background:var(--accent2)"></div></div>
+      </div>
+      <div class="stat-card energia">
+        <div class="stat-label">Energía</div>
+        <div class="stat-value" id="stat-energia">10</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-energia" style="width:100%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-card reputacion">
+        <div class="stat-label">Reputación</div>
+        <div class="stat-value" id="stat-reputacion">5</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-reputacion" style="width:50%;background:var(--accent3)"></div></div>
+      </div>
+      <div class="stat-card dinero">
+        <div class="stat-label">Ingresos $</div>
+        <div class="stat-value" id="stat-dinero">0</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" id="bar-dinero" style="width:0%;background:var(--success)"></div></div>
+      </div>
+    </div>
+
+    <div class="tip-bar" id="tip-bar">
+      💡 <span id="tip-text">Consejo del mentor: Comienza construyendo tu reputación — los clientes contratan a personas en las que confían.</span>
+    </div>
+
+    <div class="scenario-panel" id="scenario-panel">
+      <div class="scenario-tag" id="scenario-tag">Situación</div>
+      <div class="scenario-title" id="scenario-title">—</div>
+      <div class="scenario-desc" id="scenario-desc">—</div>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-title" id="result-title"></div>
+      <div id="result-body"></div>
+    </div>
+
+    <div class="choices-label">¿Qué haces?</div>
+    <div class="choices-grid" id="choices-grid"></div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <div class="log-title">📋 Historial de decisiones</div>
+      </div>
+      <div class="log-entries" id="log-entries">
+        <div class="log-entry"><span class="log-turn">—</span><span>Tu historia empieza ahora...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- End screen -->
+  <div id="endscreen" class="endscreen">
+    <span class="end-emoji" id="end-emoji">🏆</span>
+    <div class="end-title" id="end-title">¡Victoria!</div>
+    <div class="end-desc" id="end-desc"></div>
+    <div class="end-stats">
+      <div class="end-stat"><div class="end-stat-val" id="end-clientes">0</div><div class="end-stat-lbl">Clientes</div></div>
+      <div class="end-stat"><div class="end-stat-val" id="end-rep">0</div><div class="end-stat-lbl">Reputación</div></div>
+      <div class="end-stat"><div class="end-stat-val" id="end-dinero">$0</div><div class="end-stat-lbl">Ingresos</div></div>
+    </div>
+    <button class="restart-btn" onclick="startGame()">🔄 Jugar de nuevo</button>
+  </div>
+</div>
+
+<script>
+// ─── SCENARIOS ───────────────────────────────────────────────────────────────
+const scenarios = [
+  {
+    tag: "🌐 Presencia Digital",
+    title: "Tu perfil de LinkedIn está desactualizado",
+    desc: "Un cliente potencial te busca en línea y encuentra un perfil con foto de hace 5 años y sin proyectos recientes. Tienes tiempo este fin de semana.",
+    choices: [
+      {
+        action: "Dedicar el fin de semana a rehacer tu perfil completo + portafolio",
+        effects: { reputacion: +3, energia: -2, clientes: 0, dinero: 0 },
+        tags: ["+REP", "-ENERGÍA"],
+        result: "¡Excelente inversión! Tu perfil ahora aparece en búsquedas y proyecta profesionalismo. Tres personas lo visitan esa semana.",
+        tip: "Tu perfil online trabaja para ti mientras duermes. Actualízalo cada 3 meses."
+      },
+      {
+        action: "Solo cambiar la foto y añadir un post rápido",
+        effects: { reputacion: +1, energia: -1, clientes: 0, dinero: 0 },
+        tags: ["+REP leve"],
+        result: "Pequeña mejora. El perfil se ve un poco más activo, pero sin portafolio sólido el impacto es limitado.",
+        tip: "Los esfuerzos a medias producen resultados a medias."
+      },
+      {
+        action: "Ignorarlo, tu trabajo habla por sí solo",
+        effects: { reputacion: -1, energia: 0, clientes: 0, dinero: 0 },
+        tags: ["-REP"],
+        result: "El cliente potencial no te contacta. En el mundo digital, si no apareces, no existes.",
+        tip: "El 85% de los clientes investigan online antes de contratar."
+      },
+      {
+        action: "Contratar a alguien para que gestione tu marca personal",
+        effects: { reputacion: +2, energia: +1, clientes: 0, dinero: -200 },
+        tags: ["+REP", "+ENERGÍA", "-$200"],
+        result: "Tu perfil queda impecable y tú te enfocas en tu trabajo. Inversión inteligente si tienes presupuesto.",
+        tip: "Delegar lo que no dominas puede ser la mejor decisión estratégica."
+      }
+    ]
+  },
+  {
+    tag: "🤝 Networking",
+    title: "Te invitan a un evento de emprendedores local",
+    desc: "Un evento de networking este jueves por la noche. Son 3 horas, habrá 40+ profesionales. Estás cansado pero el evento podría traer contactos.",
+    choices: [
+      {
+        action: "Ir preparado con tarjetas y un elevator pitch claro",
+        effects: { reputacion: +2, energia: -2, clientes: +1, dinero: 0 },
+        tags: ["+1 CLIENTE potencial", "+REP", "-ENERGÍA"],
+        result: "¡Gran noche! Conociste a 3 personas interesantes, una podría convertirse en cliente. La preparación marcó la diferencia.",
+        tip: "El 80% de los clientes freelance vienen de referencias y contactos directos."
+      },
+      {
+        action: "Ir pero sin preparación, a ver qué pasa",
+        effects: { reputacion: 0, energia: -1, clientes: 0, dinero: 0 },
+        tags: ["sin impacto"],
+        result: "Pasaste 3 horas sin conectar genuinamente. No llevabas manera de dar seguimiento. Una oportunidad perdida.",
+        tip: "Ir a networking sin preparación es como pescar sin anzuelo."
+      },
+      {
+        action: "No ir — enviar solicitudes de conexión en LinkedIn esa noche",
+        effects: { reputacion: +1, energia: 0, clientes: 0, dinero: 0 },
+        tags: ["+REP digital"],
+        result: "3 personas aceptaron tu solicitud. El contacto digital tiene valor, aunque es más frío que el presencial.",
+        tip: "El networking digital escala, el presencial convierte mejor."
+      },
+      {
+        action: "Ir y ofrecer dar una charla corta de 5 min en el evento",
+        effects: { reputacion: +4, energia: -3, clientes: +1, dinero: 0 },
+        tags: ["+REP alto", "+1 CLIENTE", "-ENERGÍA"],
+        result: "¡Movimiento audaz! Tu micro-charla te posiciona como experto. Dos personas te contactan al día siguiente.",
+        tip: "Hablar en público es el atajo más poderoso para la visibilidad."
+      }
+    ]
+  },
+  {
+    tag: "💌 Propuesta Comercial",
+    title: "Un lead pide una cotización para un proyecto grande",
+    desc: "Alguien que te encontró online pide una propuesta para un proyecto de 3 meses. Es más grande de lo que has hecho. Sientes emoción y miedo a la vez.",
+    choices: [
+      {
+        action: "Enviar propuesta detallada con valor, proceso y precio justo",
+        effects: { reputacion: +2, energia: -2, clientes: +1, dinero: +500 },
+        tags: ["+CLIENTE", "+$500", "+REP"],
+        result: "¡El cliente acepta! Tu propuesta profesional generó confianza. Primer pago recibido. Estás en racha.",
+        tip: "Una buena propuesta no vende tu tiempo — vende la transformación que logras."
+      },
+      {
+        action: "Cotizar muy barato por miedo a perderlo",
+        effects: { reputacion: -1, energia: -1, clientes: 0, dinero: +100 },
+        tags: ["-REP", "+$100 escaso"],
+        result: "Consigues el proyecto pero a un precio que no refleja tu valor. El cliente te subestima y pide cambios constantemente.",
+        tip: "Cobrar barato no solo reduce ingresos — destruye la percepción de tu valor."
+      },
+      {
+        action: "Pedir una reunión para entender mejor el proyecto primero",
+        effects: { reputacion: +3, energia: -1, clientes: 0, dinero: 0 },
+        tags: ["+REP alto", "lead caliente"],
+        result: "El cliente queda impresionado. 'Nadie me había hecho estas preguntas.' Aún no cierras pero la relación es sólida.",
+        tip: "Hacer las preguntas correctas antes de proponer es señal de un profesional maduro."
+      },
+      {
+        action: "Declinar — el proyecto parece demasiado riesgoso",
+        effects: { reputacion: 0, energia: +2, clientes: 0, dinero: 0 },
+        tags: ["+ENERGÍA", "oportunidad perdida"],
+        result: "Descansado, pero sin ingresos. A veces el crecimiento requiere salir de la zona de confort.",
+        tip: "El 70% de las oportunidades importantes se sienten incómodas al principio."
+      }
+    ]
+  },
+  {
+    tag: "📣 Marketing de Contenidos",
+    title: "¿Deberías compartir tu conocimiento gratis online?",
+    desc: "Un colega te dice que empieces a publicar consejos de tu área en redes. 'Es dar gratis lo que cobras,' piensas. Pero ves que otros lo hacen y les funciona.",
+    choices: [
+      {
+        action: "Publicar 1 post de valor cada semana durante un mes",
+        effects: { reputacion: +3, energia: -2, clientes: +1, dinero: 0 },
+        tags: ["+REP", "+1 CLIENTE inbound", "-ENERGÍA"],
+        result: "Al mes 3, un cliente te escribe: 'Te seguí y quiero trabajar contigo.' El contenido generó autoridad.",
+        tip: "El contenido es el vendedor que trabaja 24/7 sin comisión."
+      },
+      {
+        action: "Publicar una vez y ver si funciona",
+        effects: { reputacion: +1, energia: -1, clientes: 0, dinero: 0 },
+        tags: ["+REP mínima"],
+        result: "Un post no mueve la aguja. El contenido requiere consistencia para funcionar.",
+        tip: "Una semilla no es un jardín. La constancia es lo que distingue a quien lo logra."
+      },
+      {
+        action: "Crear un newsletter mensual para tu audiencia",
+        effects: { reputacion: +4, energia: -3, clientes: +1, dinero: 0 },
+        tags: ["+REP alto", "+CLIENTE", "-ENERGÍA"],
+        result: "¡Estrategia poderosa! Tu lista crece lentamente pero es tuya. En 2 meses, un suscriptor se convierte en cliente.",
+        tip: "Tu lista de email es el único activo digital que nadie te puede quitar."
+      },
+      {
+        action: "No publicar — proteger tu conocimiento",
+        effects: { reputacion: -1, energia: +1, clientes: 0, dinero: 0 },
+        tags: ["-REP", "+ENERGÍA"],
+        result: "Tus competidores que sí publican se vuelven los referentes. El conocimiento compartido genera autoridad, no lo disminuye.",
+        tip: "Dar valor gratis no compite con tu servicio — lo justifica."
+      }
+    ]
+  },
+  {
+    tag: "📞 Seguimiento de Leads",
+    title: "Un cliente potencial no respondió tu propuesta hace 5 días",
+    desc: "Enviaste tu mejor propuesta. Silencio total. No quieres parecer desesperado, pero tampoco quieres perder la oportunidad.",
+    choices: [
+      {
+        action: "Enviar un follow-up breve y profesional con un valor adicional",
+        effects: { reputacion: +2, energia: -1, clientes: +1, dinero: +400 },
+        tags: ["+CLIENTE", "+$400", "+REP"],
+        result: "¡El cliente responde: 'Gracias por recordarme, aprobado!' El 80% de las ventas requieren al menos 1 seguimiento.",
+        tip: "El seguimiento no es desesperación — es profesionalismo."
+      },
+      {
+        action: "Esperar otra semana más sin hacer nada",
+        effects: { reputacion: 0, energia: 0, clientes: 0, dinero: 0 },
+        tags: ["espera pasiva"],
+        result: "El cliente contrató a alguien más que fue más proactivo. La oportunidad se enfrió.",
+        tip: "Los leads calientes tienen fecha de expiración. Actúa rápido."
+      },
+      {
+        action: "Llamar directamente por teléfono",
+        effects: { reputacion: +1, energia: -1, clientes: 0, dinero: 0 },
+        tags: ["contacto directo"],
+        result: "El cliente no contesta. Dejaste un mensaje. Aprecia la iniciativa pero aún no decide. Buena señal.",
+        tip: "El teléfono convierte más que el email, pero puede sentirse invasivo si se usa mal."
+      },
+      {
+        action: "Reescribir la propuesta y enviarla con precio reducido",
+        effects: { reputacion: -2, energia: -2, clientes: 0, dinero: 0 },
+        tags: ["-REP", "devalúa tu oferta"],
+        result: "El cliente responde pero pide aún más descuento. Reducir precio sin razón envía la señal equivocada.",
+        tip: "No ajustes el precio sin entender primero el verdadero obstáculo."
+      }
+    ]
+  },
+  {
+    tag: "🌟 Referidos",
+    title: "Un cliente satisfecho podría recomendarte",
+    desc: "Terminaste un proyecto y el cliente está muy contento. Podría referirte, pero esperar pasivamente puede no ser suficiente.",
+    choices: [
+      {
+        action: "Pedir activamente una reseña y si conoce a alguien que te pueda necesitar",
+        effects: { reputacion: +3, energia: -1, clientes: +2, dinero: +200 },
+        tags: ["+2 CLIENTES referidos", "+REP", "+$200"],
+        result: "¡Jackpot! El cliente te da una reseña 5 estrellas y refiere a su socio. Los referidos convierten 5x mejor que el marketing frío.",
+        tip: "Pedir referidos es la estrategia de adquisición más rentable para un freelancer."
+      },
+      {
+        action: "Esperar a que el cliente te recomiende solo",
+        effects: { reputacion: +1, energia: 0, clientes: 0, dinero: 0 },
+        tags: ["espera pasiva"],
+        result: "El cliente te tiene en mente pero nunca surgió la oportunidad de mencionar tu nombre. La intención no es acción.",
+        tip: "La gente no refiere por defecto — necesita que se lo pidas."
+      },
+      {
+        action: "Crear un programa de referidos con incentivo ($50 por referido)",
+        effects: { reputacion: +2, energia: -2, clientes: +1, dinero: -50 },
+        tags: ["+CLIENTE", "+REP", "-$50"],
+        result: "Un referido llega en 2 semanas. El incentivo motivó la acción. Inversión que se paga sola.",
+        tip: "Los incentivos reducen la fricción de recomendar. Facilita el acto."
+      },
+      {
+        action: "Enviarle un regalo de agradecimiento y nada más",
+        effects: { reputacion: +2, energia: -1, clientes: 0, dinero: -80 },
+        tags: ["+REP", "-$80", "gesto sin conversión"],
+        result: "El cliente queda encantado con el detalle. La relación se fortalece pero no se traduce en referidos inmediatos.",
+        tip: "Los gestos construyen relación; las conversaciones directas generan negocio."
+      }
+    ]
+  },
+  {
+    tag: "⚡ Productividad",
+    title: "Tienes que elegir en qué concentrarte esta semana",
+    desc: "Tienes 5 tareas pendientes: actualizar portafolio, contactar 10 leads fríos, terminar proyecto actual, estudiar nueva habilidad, y hacer admin/finanzas.",
+    choices: [
+      {
+        action: "Priorizar: terminar proyecto + contactar leads (lo que genera dinero HOY)",
+        effects: { reputacion: +1, energia: -2, clientes: +1, dinero: +300 },
+        tags: ["+$300", "+CLIENTE", "foco estratégico"],
+        result: "Cierras el proyecto a tiempo (cliente feliz) y uno de los leads responde. El foco en lo urgente-importante paga.",
+        tip: "El 20% de tus actividades genera el 80% de tus ingresos. Identifícalo y protégelo."
+      },
+      {
+        action: "Hacer todo un poco — multitasking total",
+        effects: { reputacion: 0, energia: -3, clientes: 0, dinero: 0 },
+        tags: ["-ENERGÍA fuerte", "sin resultados"],
+        result: "Nada quedó completo. Agotamiento sin resultados. El multitasking reduce la productividad hasta un 40%.",
+        tip: "Hacer 5 cosas al 20% no es lo mismo que hacer 1 cosa al 100%."
+      },
+      {
+        action: "Estudiar la nueva habilidad — invertir en futuro",
+        effects: { reputacion: +1, energia: -2, clientes: 0, dinero: 0 },
+        tags: ["inversión a largo plazo"],
+        result: "Aprendiste algo valioso para el futuro, pero esta semana no avanzaste en clientes. Equilibrio necesario.",
+        tip: "El aprendizaje es esencial, pero no puede desplazar a las actividades que pagan las facturas hoy."
+      },
+      {
+        action: "Delegar el admin y usar ese tiempo en ventas",
+        effects: { reputacion: +2, energia: +1, clientes: +1, dinero: +200 },
+        tags: ["+CLIENTE", "+$200", "+ENERGÍA"],
+        result: "Contratas a un VA por 2 horas. Te libera tiempo para hacer 2 llamadas de ventas. Una convierte. ROI positivo.",
+        tip: "Tu hora tiene un valor. Si puedes delegar por menos de lo que produces, hazlo."
+      }
+    ]
+  },
+  {
+    tag: "🏆 El Gran Reto Final",
+    title: "Una empresa mediana te ofrece ser su proveedor exclusivo",
+    desc: "Una empresa con 30 empleados quiere contratarte exclusivamente por 6 meses. Buen ingreso garantizado, pero significa rechazar otros clientes.",
+    choices: [
+      {
+        action: "Aceptar con contrato claro y cláusula de salida a los 3 meses",
+        effects: { reputacion: +2, energia: 0, clientes: +2, dinero: +800 },
+        tags: ["+$800", "+REP", "seguridad + flexibilidad"],
+        result: "¡Decisión brillante! Ingresos estables con protección de salida. En 3 meses evalúas si renovar o diversificar.",
+        tip: "La exclusividad puede ser trampa o trampolín. Un contrato bien estructurado lo convierte en lo segundo."
+      },
+      {
+        action: "Aceptar sin condiciones — el dinero seguro vale todo",
+        effects: { reputacion: 0, energia: -1, clientes: +1, dinero: +600 },
+        tags: ["+$600", "riesgo de dependencia"],
+        result: "Ingresos estables por ahora, pero a los 4 meses la empresa cambia de dirección y cancela. Sin otros clientes en pipeline.",
+        tip: "Un solo cliente es un jefe disfrazado. La diversificación es la libertad del freelancer."
+      },
+      {
+        action: "Rechazar — prefiero mantener tu independencia",
+        effects: { reputacion: +1, energia: +2, clientes: 0, dinero: 0 },
+        tags: ["+ENERGÍA", "independencia pura"],
+        result: "Valoras tu libertad. Correcto en principio, pero sin un plan B sólido, la semana sin ingresos duele.",
+        tip: "La independencia tiene precio. Asegúrate de que tienes el colchón para pagarlo."
+      },
+      {
+        action: "Negociar: exclusividad parcial + precio premium",
+        effects: { reputacion: +4, energia: -1, clientes: +2, dinero: +900 },
+        tags: ["+$900 máximo", "+REP alto", "mejor escenario"],
+        result: "¡El mejor resultado posible! La empresa acepta. Tu capacidad de negociar refleja tu madurez profesional. Todos ganan.",
+        tip: "Negociar no es confrontar — es encontrar el acuerdo donde ambas partes ganan más."
+      }
+    ]
+  }
+];
+
+const tips = [
+  "El 80% de los clientes freelance vienen de referencias y tu red personal.",
+  "Tu perfil online trabaja para ti mientras duermes.",
+  "Cobrar barato destruye la percepción de tu valor más rápido que no cobrar.",
+  "El seguimiento no es desesperación — es profesionalismo.",
+  "El contenido es el vendedor que trabaja 24/7 sin comisión.",
+  "Pedir referidos es la estrategia más rentable para un freelancer.",
+  "El 20% de tus actividades genera el 80% de tus ingresos.",
+  "Negociar bien refleja tu madurez como profesional."
+];
+
+// ─── GAME STATE ───────────────────────────────────────────────────────────────
+let state = {};
+let log = [];
+let currentScenario = 0;
+let awaitingNext = false;
+
+function startGame() {
+  state = { clientes: 0, energia: 10, reputacion: 5, dinero: 0 };
+  log = [];
+  currentScenario = 0;
+  awaitingNext = false;
+
+  document.getElementById('game-main').style.display = 'block';
+  document.getElementById('endscreen').classList.remove('show');
+  document.getElementById('result-panel').classList.remove('show');
+
+  renderProgress();
+  renderScenario();
+  updateStats();
+  renderLog();
+}
+
+function renderProgress() {
+  const track = document.getElementById('progress-track');
+  track.innerHTML = '';
+  for (let i = 0; i < scenarios.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' + (i < currentScenario ? ' done' : i === currentScenario ? ' current' : '');
+    track.appendChild(dot);
+  }
+  document.getElementById('turn-badge').textContent = `Turno ${currentScenario + 1} / ${scenarios.length}`;
+}
+
+function renderScenario() {
+  const s = scenarios[currentScenario];
+  document.getElementById('scenario-tag').textContent = s.tag;
+  document.getElementById('scenario-title').textContent = s.title;
+  document.getElementById('scenario-desc').textContent = s.desc;
+  document.getElementById('result-panel').classList.remove('show');
+
+  // Tip
+  document.getElementById('tip-text').textContent = 'Consejo del mentor: ' + tips[currentScenario % tips.length];
+
+  renderChoices(s);
+}
+
+function renderChoices(s) {
+  const grid = document.getElementById('choices-grid');
+  grid.innerHTML = '';
+  const keys = ['A', 'B', 'C', 'D'];
+  s.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.dataset.key = keys[i];
+    btn.onclick = () => makeChoice(i);
+
+    const tagsHtml = c.tags.map(t => {
+      const cls = t.startsWith('+') ? 'pos' : t.startsWith('-') ? 'neg' : 'neu';
+      return `<span class="effect-tag ${cls}">${t}</span>`;
+    }).join('');
+
+    btn.innerHTML = `<div class="choice-action">${c.action}</div><div class="choice-effects">${tagsHtml}</div>`;
+    grid.appendChild(btn);
+  });
+}
+
+function makeChoice(idx) {
+  if (awaitingNext) return;
+  awaitingNext = true;
+
+  const s = scenarios[currentScenario];
+  const choice = s.choices[idx];
+
+  // Apply effects
+  state.clientes = Math.max(0, state.clientes + choice.effects.clientes);
+  state.energia = Math.max(0, Math.min(10, state.energia + choice.effects.energia));
+  state.reputacion = Math.max(0, Math.min(10, state.reputacion + choice.effects.reputacion));
+  state.dinero = Math.max(0, state.dinero + choice.effects.dinero);
+
+  updateStats();
+
+  // Show result
+  const rp = document.getElementById('result-panel');
+  document.getElementById('result-title').textContent = choice.action;
+  document.getElementById('result-body').textContent = choice.result + ' ⟶ ' + choice.tip;
+  rp.classList.add('show');
+
+  // Log
+  log.push({ turn: currentScenario + 1, action: choice.action });
+  renderLog();
+
+  // Disable buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.style.opacity = '0.4');
+
+  // Check energy
+  if (state.energia <= 0) {
+    setTimeout(() => endGame(false, 'burnout'), 1600);
+    return;
+  }
+
+  // Next turn
+  currentScenario++;
+  if (currentScenario >= scenarios.length) {
+    setTimeout(() => endGame(true), 1800);
+  } else {
+    setTimeout(() => {
+      awaitingNext = false;
+      renderProgress();
+      renderScenario();
+    }, 2000);
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-clientes').textContent = state.clientes;
+  document.getElementById('stat-energia').textContent = state.energia;
+  document.getElementById('stat-reputacion').textContent = state.reputacion;
+  document.getElementById('stat-dinero').textContent = '$' + state.dinero;
+
+  document.getElementById('bar-clientes').style.width = Math.min(100, state.clientes * 14) + '%';
+  document.getElementById('bar-energia').style.width = (state.energia / 10 * 100) + '%';
+  document.getElementById('bar-reputacion').style.width = (state.reputacion / 10 * 100) + '%';
+  document.getElementById('bar-dinero').style.width = Math.min(100, state.dinero / 20) + '%';
+}
+
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  if (log.length === 0) return;
+  el.innerHTML = log.map(e =>
+    `<div class="log-entry"><span class="log-turn">T${e.turn}</span><span>${e.action}</span></div>`
+  ).reverse().join('');
+}
+
+function endGame(win, reason) {
+  document.getElementById('game-main').style.display = 'none';
+  const es = document.getElementById('endscreen');
+  es.classList.add('show');
+
+  document.getElementById('end-clientes').textContent = state.clientes;
+  document.getElementById('end-rep').textContent = state.reputacion + '/10';
+  document.getElementById('end-dinero').textContent = '$' + state.dinero;
+
+  if (win) {
+    let grade = state.clientes >= 6 ? '🏆 Leyenda del Freelance' : state.clientes >= 4 ? '🚀 Pro en Ascenso' : '🌱 Semilla Plantada';
+    document.getElementById('end-emoji').textContent = state.clientes >= 4 ? '🏆' : '🌱';
+    document.getElementById('end-title').className = 'end-title win';
+    document.getElementById('end-title').textContent = grade;
+    document.getElementById('end-desc').textContent =
+      `Completaste los 8 desafíos con ${state.clientes} clientes conseguidos y $${state.dinero} en ingresos potenciales. Reputación: ${state.reputacion}/10. Cada decisión fue un aprendizaje real. ¿Puedes mejorar tu puntaje?`;
+  } else {
+    document.getElementById('end-emoji').textContent = '😵';
+    document.getElementById('end-title').className = 'end-title lose';
+    document.getElementById('end-title').textContent = 'Burnout Freelancer';
+    document.getElementById('end-desc').textContent =
+      `Tu energía llegó a cero. Conseguiste ${state.clientes} clientes pero te agotaste en el proceso. La sostenibilidad es tan importante como el crecimiento. ¡Inténtalo de nuevo con mejor balance!`;
+  }
+}
+
+// Start!
+startGame();
+</script>
+</body>
+</html>
